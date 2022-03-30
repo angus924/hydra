@@ -39,13 +39,13 @@ Please cite as:
 ## Code
 
 ### [`hydra.py`](./code/hydra.py)
-### [`softmax.py`](./code/softmax.py)*
+### [`hydra_multivariate.py`](./code/hydra_multivariate.py)&#8224;
+### [`softmax.py`](./code/softmax.py)\*
 
+&#8224; *experimental*  
 \* *Hydra + SGD for larger datasets (i.e., more than approx. 10,000 training examples)*
 
 ## Examples
-
-**Hydra**
 
 ```python
 from hydra import Hydra
@@ -58,37 +58,13 @@ transform = Hydra(X_training.shape[-1])
 X_training_transform = transform(X_training)
 X_test_transform = transform(X_test)
 
-classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10), normalize = True)
+classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10), normalize = True) # see note
 classifier.fit(X_training_transform, Y_training)
 
 predictions = classifier.predict(X_test_transform)
 ```
 
-**Normalization (RidgeClassifierCV)**
-
-*"Old" Method (scikit-learn 0.24)*
-
-```python
-# RidgeClassifierCV(..., normalize = True) [deprecated]
-
-classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10), normalize = True)
-classifier.fit(X_training_transform, Y_training)
-```
-
-*"New" Method (scikit-learn 1.0)*
-
-```python
-# "manually" subtract mean and divide by l2 norm (*NOT* sklearn.preprocessing.StandardScaler)
-
-_mean = X_training_transform.mean(0)
-_norm = (X_training_transform - _mean).norm(dim = 0) + 1e-8
-
-X_training_transform = (X_training_transform - _mean) / _norm
-X_test_transform = (X_test_transform - _mean) / _norm
-
-classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10))
-classifier.fit(X_training_transform, Y_training)
-```
+See note re [normalization](./normalization.md).
 
 ## Acknowledgements
 
