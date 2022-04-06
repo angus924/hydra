@@ -1,3 +1,5 @@
+[`ROCKET`](https://github.com/angus924/rocket) &middot; [`MINIROCKET`](https://github.com/angus924/minirocket) &middot; [**`HYDRA`**](https://github.com/angus924/hydra)
+
 # HYDRA
 
 ***HYDRA: Competing convolutional kernels for fast and accurate time series classification***
