@@ -66,8 +66,7 @@ classifier.fit(X_training_transform, Y_training)
 predictions = classifier.predict(X_test_transform)
 ```
 
-<details><summary><b>Note re Normalization</b></summary>
-<p></p>
+<details><summary><b>Note re Normalization</b></summary><p>
 To reproduce the behaviour of the (now deprecated) `normalize` parameter of `RidgeClassifierCV`, subtract the (per feature/column) mean and divide by the (per column/feature) l2 norm.
 
 ```python
@@ -80,7 +79,7 @@ X_test_transform = (X_test_transform - _mean) / _norm
 classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10))
 classifier.fit(X_training_transform, Y_training)
 ```
-</details>
+</p></details>
 
 ## Acknowledgements
 
