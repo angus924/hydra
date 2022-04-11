@@ -67,6 +67,7 @@ predictions = classifier.predict(X_test_transform)
 ```
 
 <details><summary><b>Note re Normalization</b> <i>(click to open)</i></summary>
+
 To reproduce the behaviour of the (now deprecated) `normalize` parameter of `RidgeClassifierCV`, subtract the (per feature/column) mean and divide by the (per column/feature) l2 norm.
 
 ```python
