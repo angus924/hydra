@@ -25,7 +25,7 @@ Please cite as:
 #### UCR Archive (112 Datasets, 30 Resamples)
 
 * [Hydra](./results/results_ucr112_hydra.csv)
-* [Rocket+Hydra, MiniRocket+Hydra, MultiRocket+Hydra](./results/results_ucr112_variants.csv)
+* [Hydra+MiniRocket, Hydra+MultiRocket, Hydra+Rocket](./results/results_ucr112_variants.csv)
 
 ## Requirements
 
