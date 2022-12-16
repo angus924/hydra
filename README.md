@@ -27,10 +27,6 @@ Please cite as:
 * [Hydra](./results/results_ucr112_hydra.csv)
 * [Rocket+Hydra, MiniRocket+Hydra, MultiRocket+Hydra](./results/results_ucr112_variants.csv)
 
-#### Sensitivity Analysis (Additional Results)
-
-* [Accuracy vs *k* & *g*](./results/accuracy_vs_k_and_g.pdf) (pdf)
-
 ## Requirements
 
 * Python
@@ -50,7 +46,7 @@ Please cite as:
 ## Examples
 
 ```python
-from hydra import Hydra
+from hydra import Hydra, SparseScaler
 from sklearn.linear_model import RidgeClassifierCV
 
 [...] # load data (torch.FloatTensor, shape = (num_examples, 1, length))
@@ -60,27 +56,16 @@ transform = Hydra(X_training.shape[-1])
 X_training_transform = transform(X_training)
 X_test_transform = transform(X_test)
 
-classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10), normalize = True) # see note
+scaler = SparseScaler()
+
+X_training_transform = scaler.fit_transform(X_training_transform)
+X_test_transform = scaler.transform(X_test_transform)
+
+classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10))
 classifier.fit(X_training_transform, Y_training)
 
 predictions = classifier.predict(X_test_transform)
 ```
-
-<details><summary><b>Note re Normalization</b> <i>(click to open)</i></summary>
-
-To reproduce the behaviour of the (now deprecated) `normalize` parameter of `RidgeClassifierCV`, subtract the (per feature/column) mean and divide by the (per column/feature) l2 norm.
-
-```python
-_mean = X_training_transform.mean(0)
-_norm = (X_training_transform - _mean).norm(dim = 0) + 1e-8
-
-X_training_transform = (X_training_transform - _mean) / _norm
-X_test_transform = (X_test_transform - _mean) / _norm
-
-classifier = RidgeClassifierCV(alphas = np.logspace(-3, 3, 10))
-classifier.fit(X_training_transform, Y_training)
-```
-</details>
 
 ## Acknowledgements
 
