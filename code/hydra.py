@@ -1,18 +1,19 @@
-# Angus Dempster, Daniel F. Schmidt, Geoffrey I. Webb
+# Angus Dempster, Daniel F Schmidt, Geoffrey I Webb
 
-# HYDRA: Competing convolutional kernels for fast and accurate time series classification
+# HYDRA: Competing Convolutional Kernels for Fast and Accurate Time Series Classification
 # https://arxiv.org/abs/2203.13652
-
-# todo: cleanup, documentation
 
 import numpy as np
 import torch, torch.nn as nn, torch.nn.functional as F
 
 class Hydra(nn.Module):
 
-    def __init__(self, input_length, k = 8, g = 64):
+    def __init__(self, input_length, k = 8, g = 64, seed = None):
 
         super().__init__()
+
+        if seed is not None:
+            torch.manual_seed(seed)
 
         self.k = k # num kernels per group
         self.g = g # num groups
@@ -24,18 +25,12 @@ class Hydra(nn.Module):
 
         self.paddings = torch.div((9 - 1) * self.dilations, 2, rounding_mode = "floor").int()
 
-        # if g > 1, assign: half the groups to X, half the groups to diff(X)
-        divisor = 2 if self.g > 1 else 1
-        _g = g // divisor
-        self._g = _g
+        self.divisor = min(2, self.g)
+        self.h = self.g // self.divisor
 
-        self.W = [self.normalize(torch.randn(divisor, k * _g, 1, 9)) for _ in range(self.num_dilations)]
-
-    @staticmethod
-    def normalize(W):
-        W -= W.mean(-1, keepdims = True)
-        W /= W.abs().sum(-1, keepdims = True)
-        return W
+        self.W = torch.randn(self.num_dilations, self.divisor, self.k * self.h, 1, 9)
+        self.W = self.W - self.W.mean(-1, keepdims = True)
+        self.W = self.W / self.W.abs().sum(-1, keepdims = True)
 
     # transform in batches of *batch_size*
     def batch(self, X, batch_size = 256):
@@ -45,7 +40,7 @@ class Hydra(nn.Module):
         else:
             Z = []
             batches = torch.arange(num_examples).split(batch_size)
-            for i, batch in enumerate(batches):
+            for batch in batches:
                 Z.append(self(X[batch]))
             return torch.cat(Z)
 
@@ -53,7 +48,7 @@ class Hydra(nn.Module):
 
         num_examples = X.shape[0]
 
-        if self.g > 1:
+        if self.divisor > 1:
             diff_X = torch.diff(X)
 
         Z = []
@@ -63,18 +58,16 @@ class Hydra(nn.Module):
             d = self.dilations[dilation_index].item()
             p = self.paddings[dilation_index].item()
 
-            # diff_index == 0 -> X
-            # diff_index == 1 -> diff(X)
-            for diff_index in range(min(2, self.g)):
+            for diff_index in range(self.divisor):
 
-                _Z = F.conv1d(X if diff_index == 0 else diff_X, self.W[dilation_index][diff_index], dilation = d, padding = p) \
-                      .view(num_examples, self._g, self.k, -1)
+                _Z = F.conv1d(X if diff_index == 0 else diff_X, self.W[dilation_index, diff_index], dilation = d, padding = p) \
+                      .view(num_examples, self.h, self.k, -1)
 
                 max_values, max_indices = _Z.max(2)
-                count_max = torch.zeros(num_examples, self._g, self.k)
+                count_max = torch.zeros(num_examples, self.h, self.k)
 
                 min_values, min_indices = _Z.min(2)
-                count_min = torch.zeros(num_examples, self._g, self.k)
+                count_min = torch.zeros(num_examples, self.h, self.k)
 
                 count_max.scatter_add_(-1, max_indices, max_values)
                 count_min.scatter_add_(-1, min_indices, torch.ones_like(min_values))
@@ -85,3 +78,42 @@ class Hydra(nn.Module):
         Z = torch.cat(Z, 1).view(num_examples, -1)
 
         return Z
+
+class SparseScaler():
+
+    def __init__(self, mask = True, exponent = 4):
+
+        self.mask = mask
+        self.exponent = exponent
+
+        self.fitted = False
+
+    def fit(self, X):
+
+        assert not self.fitted, "Already fitted."
+
+        X = X.clamp(0).sqrt()
+
+        self.epsilon = (X == 0).float().mean(0) ** self.exponent + 1e-8
+
+        self.mu = X.mean(0)
+        self.sigma = X.std(0) + self.epsilon
+
+        self.fitted = True
+
+    def transform(self, X):
+
+        assert self.fitted, "Not fitted."
+
+        X = X.clamp(0).sqrt()
+
+        if self.mask:
+            return ((X - self.mu) * (X != 0)) / self.sigma
+        else:
+            return (X - self.mu) / self.sigma
+
+    def fit_transform(self, X):
+
+        self.fit(X)
+
+        return self.transform(X)
