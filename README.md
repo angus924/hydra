@@ -14,7 +14,7 @@ Please cite as:
 ```bibtex
 @article{dempster_etal_2023,
   author  = {Dempster, Angus and Schmidt, Daniel F and Webb, Geoffrey I},
-  title   = {{Hydra}: Competing Convolutional Kernels for Fast and Accurate Time Series Classification},
+  title   = {Hydra: Competing Convolutional Kernels for Fast and Accurate Time Series Classification},
   year    = {2023},
   journal = {Data Mining and Knowledge Discovery},
   volume  = {37},
